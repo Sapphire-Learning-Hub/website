@@ -7,6 +7,7 @@ const packageJsonUrl = new URL("../package.json", import.meta.url);
 const layoutFileUrl = new URL("../app/layout.tsx", import.meta.url);
 const globalCssUrl = new URL("../app/globals.css", import.meta.url);
 const d1ExampleDirUrl = new URL("../examples/d1", import.meta.url);
+const drizzleDirUrl = new URL("../drizzle", import.meta.url);
 
 async function readPackageJson() {
   return JSON.parse(await readFile(packageJsonUrl, "utf8"));
@@ -56,4 +57,8 @@ test("does not require remote Google Fonts during build", async () => {
 
 test("does not keep template example code that pulls removed platform dependencies", () => {
   assert.equal(existsSync(d1ExampleDirUrl), false);
+});
+
+test("does not keep unused Drizzle metadata after removing database tooling", () => {
+  assert.equal(existsSync(drizzleDirUrl), false);
 });
