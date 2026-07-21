@@ -8,6 +8,11 @@ const layoutFileUrl = new URL("../app/layout.tsx", import.meta.url);
 const globalCssUrl = new URL("../app/globals.css", import.meta.url);
 const d1ExampleDirUrl = new URL("../examples/d1", import.meta.url);
 const drizzleDirUrl = new URL("../drizzle", import.meta.url);
+const agentsFileUrl = new URL("../AGENTS.md", import.meta.url);
+const bunLockUrl = new URL("../bun.lock", import.meta.url);
+const packageLockUrl = new URL("../package-lock.json", import.meta.url);
+const nestedProjectDirUrl = new URL("../sapphire-learning-hub", import.meta.url);
+const readmeUrl = new URL("../README.md", import.meta.url);
 
 async function readPackageJson() {
   return JSON.parse(await readFile(packageJsonUrl, "utf8"));
@@ -61,4 +66,33 @@ test("does not keep template example code that pulls removed platform dependenci
 
 test("does not keep unused Drizzle metadata after removing database tooling", () => {
   assert.equal(existsSync(drizzleDirUrl), false);
+});
+
+test("uses bun as the only package manager", async () => {
+  const packageJson = await readPackageJson();
+
+  assert.equal(packageJson.packageManager, "bun@1.3.10");
+  assert.equal(existsSync(bunLockUrl), true);
+  assert.equal(existsSync(packageLockUrl), false);
+});
+
+test("documents repo-specific agent rules in AGENTS.md", async () => {
+  const agentsSource = await readUtf8(agentsFileUrl);
+
+  assert.equal(agentsSource.includes("bun"), true);
+  assert.equal(agentsSource.includes("Conventional Commits"), true);
+  assert.equal(agentsSource.includes("app/"), true);
+});
+
+test("keeps the workspace root as the project root", () => {
+  assert.equal(existsSync(nestedProjectDirUrl), false);
+});
+
+test("README uses bun-based workflow examples", async () => {
+  const readmeSource = await readUtf8(readmeUrl);
+
+  assert.equal(readmeSource.includes("bun install"), true);
+  assert.equal(readmeSource.includes("bun run dev"), true);
+  assert.equal(readmeSource.includes("npm install"), false);
+  assert.equal(readmeSource.includes("npm run dev"), false);
 });

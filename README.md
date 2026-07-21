@@ -3,19 +3,28 @@
 ## Prerequisites
 
 - Node.js `>=22.13.0`
+- Bun `>=1.3.10`
 
 ## Local Development
 
 ```bash
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 ## Production Build
 
 ```bash
-npm run build
-npm run start
+bun run build
+bun run start
+```
+
+## Verification
+
+```bash
+bun run test
+bun run lint
+bun run build
 ```
 
 ## Project Structure
