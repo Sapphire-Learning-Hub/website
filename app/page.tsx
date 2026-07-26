@@ -54,7 +54,6 @@ export default async function Home() {
           <BrandMark />
           <span>Sapphire Learning Hub</span>
         </a>
-        <span className="header-index" aria-hidden="true">01</span>
         <nav aria-label="主导航">
           <a href="#projects">项目</a>
           <a href="#path">学习路径</a>
@@ -67,12 +66,6 @@ export default async function Home() {
       </header>
 
       <section className="hero grid-paper" id="top">
-        <div className="rail-label" aria-hidden="true">
-          <span>01</span>
-          <i />
-          <small>HERO_TITLE<br />{"// GRID 12 COL"}</small>
-        </div>
-
         <div className="hero-copy">
           <p className="kicker"><span /> SOFTWARE · PRACTICE · COMMUNITY</p>
           <h1>让每一次练习，<br />都成为真正的作品</h1>
@@ -126,7 +119,6 @@ export default async function Home() {
       <AnnouncementsSection items={announcements} events={events} />
 
       <section className="about section-shell" id="about">
-        <div className="about-label"><span>03</span><small>ABOUT<br />THE HUB</small></div>
         <div className="about-copy">
           <p className="kicker"><span /> SAPPHIRE LEARNING HUB</p>
           <h2>为学习者提供一块<br />可以共同打磨作品的地方。</h2>
