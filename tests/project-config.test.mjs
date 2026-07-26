@@ -118,6 +118,8 @@ test("keeps the expected backend and admin route layout", () => {
     "../app/api/admin/repos/route.ts",
     "../app/api/admin/repos/sync/route.ts",
     "../app/api/admin/contributors/[id]/route.ts",
+    "../app/projects/page.tsx",
+    "../app/community/page.tsx",
     "../app/admin/page.tsx",
     "../app/admin/login/page.tsx",
     "../app/admin/repos/page.tsx",

@@ -1,5 +1,6 @@
+import Link from "next/link";
 import type { PublicRepo } from "@/lib/queries";
-import { ArrowUpRight, Star } from "./icons";
+import { ArrowRight, ArrowUpRight, Star } from "./icons";
 
 const githubUrl = "https://github.com/Sapphire-Learning-Hub";
 
@@ -55,16 +56,26 @@ function ProjectArt({ type }: { type: string }) {
   );
 }
 
-export default function ProjectsSection({ repos }: { repos: PublicRepo[] }) {
+export default function ProjectsSection({
+  repos,
+  viewAllHref,
+  showHeading = true,
+}: {
+  repos: PublicRepo[];
+  viewAllHref?: string;
+  showHeading?: boolean;
+}) {
   return (
     <section className="projects section-shell" id="projects">
-      <div className="section-heading">
-        <div>
-          <p className="kicker"><span /> SELECTED PRACTICE</p>
-          <h2>从真实项目开始</h2>
+      {showHeading ? (
+        <div className="section-heading">
+          <div>
+            <p className="kicker"><span /> SELECTED PRACTICE</p>
+            <h2>从真实项目开始</h2>
+          </div>
+          <p>不止完成一道练习，而是经历从理解需求、实现功能到协作交付的全过程。</p>
         </div>
-        <p>不止完成一道练习，而是经历从理解需求、实现功能到协作交付的全过程。</p>
-      </div>
+      ) : null}
 
       <div className="project-grid">
         {repos.length > 0
@@ -102,6 +113,12 @@ export default function ProjectsSection({ repos }: { repos: PublicRepo[] }) {
               </a>
             ))}
       </div>
+
+      {viewAllHref ? (
+        <Link className="view-all-link" href={viewAllHref}>
+          查看全部项目 <ArrowRight />
+        </Link>
+      ) : null}
     </section>
   );
 }

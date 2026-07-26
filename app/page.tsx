@@ -1,22 +1,14 @@
-import AnnouncementsSection from "./components/AnnouncementsSection";
-import CommunitySection from "./components/CommunitySection";
 import JoinForm from "./components/JoinForm";
 import ProjectsSection from "./components/ProjectsSection";
-import VisitCounter from "./components/VisitCounter";
+import SiteFooter from "./components/SiteFooter";
+import SiteHeader from "./components/SiteHeader";
 import {
   ArrowDownRight,
   ArrowUpRight,
   Check,
   GitFork,
 } from "./components/icons";
-import {
-  getCommunityStats,
-  getPublishedAnnouncements,
-  getRecentEvents,
-  getVisibleContributors,
-  getVisibleRepos,
-  getVisitStats,
-} from "@/lib/queries";
+import { getVisibleRepos, getVisitStats } from "@/lib/queries";
 
 export const revalidate = 300;
 
@@ -28,42 +20,15 @@ const steps = [
   ["03", "协作交付", "提交 Pull Request，参与讨论与 Code Review，让成果持续改进。"],
 ];
 
-function BrandMark() {
-  return (
-    <span className="brand-mark" aria-hidden="true">
-      <span />
-    </span>
-  );
-}
-
 export default async function Home() {
-  const [repos, announcements, visits, contributors, communityStats, events] =
-    await Promise.all([
-      getVisibleRepos().catch(() => []),
-      getPublishedAnnouncements().catch(() => []),
-      getVisitStats().catch(() => ({ total: null, today: null })),
-      getVisibleContributors().catch(() => []),
-      getCommunityStats().catch(() => null),
-      getRecentEvents(10).catch(() => []),
-    ]);
+  const [repos, visits] = await Promise.all([
+    getVisibleRepos(3).catch(() => []),
+    getVisitStats().catch(() => ({ total: null, today: null })),
+  ]);
 
   return (
     <main>
-      <header className="site-header">
-        <a className="brand" href="#top" aria-label="返回首页">
-          <BrandMark />
-          <span>Sapphire Learning Hub</span>
-        </a>
-        <nav aria-label="主导航">
-          <a href="#projects">项目</a>
-          <a href="#path">学习路径</a>
-          {announcements.length > 0 || events.length > 0 ? (
-            <a href="#news">动态</a>
-          ) : null}
-          <a href="#about">关于我们</a>
-          <a href="#join">加入</a>
-        </nav>
-      </header>
+      <SiteHeader />
 
       <section className="hero grid-paper" id="top">
         <div className="hero-copy">
@@ -74,7 +39,7 @@ export default async function Home() {
             在真实项目中学习协作、工程化与开源。
           </p>
           <div className="hero-actions">
-            <a className="button button-primary" href="#projects">探索项目 <ArrowDownRight /></a>
+            <a className="button button-primary" href="/projects">探索项目 <ArrowDownRight /></a>
             <a className="button button-secondary" href="#join">加入我们 <ArrowUpRight /></a>
           </div>
         </div>
@@ -97,7 +62,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <ProjectsSection repos={repos} />
+      <ProjectsSection repos={repos} viewAllHref="/projects" />
 
       <section className="learning-path section-shell" id="path">
         <div className="path-intro">
@@ -116,8 +81,6 @@ export default async function Home() {
         </ol>
       </section>
 
-      <AnnouncementsSection items={announcements} events={events} />
-
       <section className="about section-shell" id="about">
         <div className="about-copy">
           <p className="kicker"><span /> SAPPHIRE LEARNING HUB</p>
@@ -132,8 +95,6 @@ export default async function Home() {
         </div>
       </section>
 
-      <CommunitySection contributors={contributors} stats={communityStats} />
-
       <section className="join section-shell" id="join">
         <div className="section-heading">
           <div>
@@ -145,14 +106,7 @@ export default async function Home() {
         <JoinForm />
       </section>
 
-      <footer>
-        <div className="footer-brand"><BrandMark /><span>Sapphire Learning Hub</span></div>
-        <p>
-          Make practice visible. Make progress real.
-          <VisitCounter initialTotal={visits.total} />
-        </p>
-        <a href={githubUrl} target="_blank" rel="noreferrer">GitHub <ArrowUpRight /></a>
-      </footer>
+      <SiteFooter visitTotal={visits.total} />
     </main>
   );
 }

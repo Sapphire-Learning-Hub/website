@@ -73,6 +73,8 @@ bun run create-admin <username>
 ## Project Structure
 
 - `app/`: Next.js App Router pages and global styles
+  - `app/projects/`: full project list page
+  - `app/community/`: contributors, announcements and GitHub activity page
   - `app/api/`: public and admin API route handlers
   - `app/admin/`: password-protected admin dashboard
   - `app/components/`: page sections and client components

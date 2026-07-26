@@ -114,6 +114,16 @@ footer { min-height: 180px; padding: 50px 48px; background: var(--blue); color: 
 .footer-brand { display: flex; gap: 15px; align-items: center; font-weight: 760; }.footer-brand .brand-mark { background: #fff; }.footer-brand .brand-mark span { border-color: var(--blue); }
 footer p { margin: 0; font: 12px var(--font-mono); opacity: .8; } footer > a { font-weight: 720; border-bottom: 1px solid currentColor; padding-bottom: 4px; }
 
+.page-hero { padding: 96px 48px 84px; border-bottom: 1px solid var(--line); }
+.page-hero h1 { margin: 0; font-size: clamp(44px, 5vw, 76px); line-height: 1.05; letter-spacing: -.06em; font-weight: 900; }
+.page-hero-description { margin: 24px 0 0; max-width: 620px; font-size: 17px; line-height: 1.85; color: #4f514f; }
+.view-all-link { display: inline-flex; align-items: center; gap: 14px; margin-top: 40px; padding: 14px 0; border-bottom: 2px solid var(--blue); color: var(--blue); font-weight: 740; }
+.view-all-link:hover { color: var(--blue-deep); border-color: var(--blue-deep); }
+.join-cta { display: flex; align-items: end; justify-content: space-between; gap: 40px; flex-wrap: wrap; }
+.join-cta h2 { margin: 0 0 14px; font-size: clamp(34px, 4vw, 56px); letter-spacing: -.05em; line-height: 1.05; }
+.join-cta > div > p:not(.kicker) { margin: 0; color: #4f514f; line-height: 1.8; }
+.join-cta .button { flex: 0 0 auto; }
+
 .news-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 60px; align-items: start; }
 .activity-title { margin: 0 0 14px; font: 11px var(--font-mono); letter-spacing: .08em; color: var(--muted); }
 .activity-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--ink); background: rgba(255,255,255,.35); }
@@ -247,6 +257,10 @@ footer p { margin: 0; font: 12px var(--font-mono); opacity: .8; } footer > a { f
   .learning-path { display: block; }.path-intro { position: static; margin-bottom: 55px; }.steps li { grid-template-columns: 48px 1fr 22px; }
   .about { display: block; }.principles { margin-top: 60px; }
   footer { display: block; padding: 44px 20px; } footer p { margin: 40px 0 24px; }
+  .page-hero { padding: 64px 20px 52px; }
+  .page-hero-description { font-size: 15px; }
+  .join-cta { display: block; }
+  .join-cta .button { margin-top: 26px; width: 100%; }
   .news-grid { display: block; }
   .activity { margin-top: 44px; }
   .announcement-item { grid-template-columns: 1fr; gap: 8px; padding: 26px 0; }

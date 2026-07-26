@@ -176,10 +176,11 @@ export type PublicRepo = {
   language: string | null;
 };
 
-export async function getVisibleRepos(): Promise<PublicRepo[]> {
+export async function getVisibleRepos(limit = 9): Promise<PublicRepo[]> {
   const rows = await queryOr<RepoRow, RepoRow[]>(
     [],
-    `SELECT ${REPO_COLUMNS} FROM repos WHERE visible = 1 AND missing = 0 ORDER BY position ASC, stargazers_count DESC, github_name ASC LIMIT 9`,
+    `SELECT ${REPO_COLUMNS} FROM repos WHERE visible = 1 AND missing = 0 ORDER BY position ASC, stargazers_count DESC, github_name ASC LIMIT ?`,
+    [limit],
   );
   return rows.map((row) => ({
     name: row.display_name?.trim() || row.github_name,
