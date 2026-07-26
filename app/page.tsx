@@ -1,4 +1,5 @@
 import AnnouncementsSection from "./components/AnnouncementsSection";
+import CommunitySection from "./components/CommunitySection";
 import JoinForm from "./components/JoinForm";
 import ProjectsSection from "./components/ProjectsSection";
 import VisitCounter from "./components/VisitCounter";
@@ -9,7 +10,10 @@ import {
   GitFork,
 } from "./components/icons";
 import {
+  getCommunityStats,
   getPublishedAnnouncements,
+  getRecentEvents,
+  getVisibleContributors,
   getVisibleRepos,
   getVisitStats,
 } from "@/lib/queries";
@@ -33,11 +37,15 @@ function BrandMark() {
 }
 
 export default async function Home() {
-  const [repos, announcements, visits] = await Promise.all([
-    getVisibleRepos().catch(() => []),
-    getPublishedAnnouncements().catch(() => []),
-    getVisitStats().catch(() => ({ total: null, today: null })),
-  ]);
+  const [repos, announcements, visits, contributors, communityStats, events] =
+    await Promise.all([
+      getVisibleRepos().catch(() => []),
+      getPublishedAnnouncements().catch(() => []),
+      getVisitStats().catch(() => ({ total: null, today: null })),
+      getVisibleContributors().catch(() => []),
+      getCommunityStats().catch(() => null),
+      getRecentEvents(10).catch(() => []),
+    ]);
 
   return (
     <main>
@@ -50,7 +58,9 @@ export default async function Home() {
         <nav aria-label="主导航">
           <a href="#projects">项目</a>
           <a href="#path">学习路径</a>
-          {announcements.length > 0 ? <a href="#news">动态</a> : null}
+          {announcements.length > 0 || events.length > 0 ? (
+            <a href="#news">动态</a>
+          ) : null}
           <a href="#about">关于我们</a>
           <a href="#join">加入</a>
         </nav>
@@ -113,7 +123,7 @@ export default async function Home() {
         </ol>
       </section>
 
-      <AnnouncementsSection items={announcements} />
+      <AnnouncementsSection items={announcements} events={events} />
 
       <section className="about section-shell" id="about">
         <div className="about-label"><span>03</span><small>ABOUT<br />THE HUB</small></div>
@@ -129,6 +139,8 @@ export default async function Home() {
           <div><b>GROW</b><span>共同成长</span></div>
         </div>
       </section>
+
+      <CommunitySection contributors={contributors} stats={communityStats} />
 
       <section className="join section-shell" id="join">
         <div className="section-heading">
