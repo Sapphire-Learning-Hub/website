@@ -96,3 +96,62 @@ test("README uses bun-based workflow examples", async () => {
   assert.equal(readmeSource.includes("npm install"), false);
   assert.equal(readmeSource.includes("npm run dev"), false);
 });
+
+test("keeps runtime dependencies to the approved allowlist", async () => {
+  const packageJson = await readPackageJson();
+
+  assert.deepEqual(Object.keys(packageJson.dependencies).sort(), [
+    "mysql2",
+    "next",
+    "react",
+    "react-dom",
+  ]);
+});
+
+test("keeps the expected backend and admin route layout", () => {
+  const routes = [
+    "../app/api/join/route.ts",
+    "../app/api/announcements/route.ts",
+    "../app/api/visits/route.ts",
+    "../app/api/admin/login/route.ts",
+    "../app/admin/page.tsx",
+    "../app/admin/login/page.tsx",
+  ];
+  for (const route of routes) {
+    assert.equal(
+      existsSync(new URL(route, import.meta.url)),
+      true,
+      `${route} should exist`,
+    );
+  }
+});
+
+test("keeps the home page a server component", async () => {
+  const pageSource = await readUtf8(new URL("../app/page.tsx", import.meta.url));
+
+  assert.equal(pageSource.includes('"use client"'), false);
+});
+
+test("keeps SQL and schema definitions inside lib/", async () => {
+  const dbSource = await readUtf8(new URL("../lib/db.ts", import.meta.url));
+
+  assert.equal(dbSource.includes("CREATE TABLE IF NOT EXISTS"), true);
+  const routeSources = await Promise.all(
+    [
+      "../app/api/join/route.ts",
+      "../app/api/announcements/route.ts",
+      "../app/api/visits/route.ts",
+    ].map((route) => readUtf8(new URL(route, import.meta.url))),
+  );
+  for (const source of routeSources) {
+    assert.equal(source.includes("CREATE TABLE"), false);
+    assert.equal(source.includes("createPool"), false);
+  }
+});
+
+test("README documents the backend environment variables", async () => {
+  const readmeSource = await readUtf8(readmeUrl);
+
+  assert.equal(readmeSource.includes("DATABASE_URL"), true);
+  assert.equal(readmeSource.includes("ADMIN_PASSWORD"), true);
+});
