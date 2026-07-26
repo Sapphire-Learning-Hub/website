@@ -1,0 +1,217 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import type { RepoRow } from "@/lib/queries";
+
+type Editing = {
+  id: number;
+  display_name: string;
+  override_description: string;
+  position: string;
+};
+
+export default function RepoManager({
+  items,
+  intervalMinutes,
+}: {
+  items: RepoRow[];
+  intervalMinutes: number;
+}) {
+  const router = useRouter();
+  const [editing, setEditing] = useState<Editing | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function call(path: string, method: string, body?: object) {
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await fetch(path, {
+        method,
+        headers: body ? { "Content-Type": "application/json" } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        setError(data?.error ?? "操作失败，请重试。");
+        return null;
+      }
+      router.refresh();
+      return data;
+    } catch {
+      setError("网络错误，请重试。");
+      return null;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function refresh() {
+    setNotice(null);
+    const data = await call("/api/admin/repos/sync", "POST");
+    if (data?.ok) {
+      setNotice(`已同步 ${data.count} 个仓库。`);
+    }
+  }
+
+  async function save(event: React.FormEvent) {
+    event.preventDefault();
+    if (!editing) return;
+    const data = await call(`/api/admin/repos/${editing.id}`, "PATCH", {
+      display_name: editing.display_name,
+      override_description: editing.override_description,
+      position: Number(editing.position) || 0,
+    });
+    if (data?.ok) setEditing(null);
+  }
+
+  return (
+    <div>
+      <div className="admin-toolbar">
+        <h1 className="admin-title">仓库管理</h1>
+        <button
+          type="button"
+          className="button button-primary admin-new"
+          disabled={busy}
+          onClick={refresh}
+        >
+          {busy ? "同步中…" : "立即同步"} <span>↘</span>
+        </button>
+      </div>
+
+      <p className="admin-note">
+        每 {intervalMinutes} 分钟自动从 GitHub 同步一次；下方的名称/简介覆盖与显示设置在同步后保留。
+      </p>
+      {notice ? <p className="admin-notice">{notice}</p> : null}
+      {error ? <p className="form-error">{error}</p> : null}
+
+      {editing ? (
+        <form className="admin-editor" onSubmit={save}>
+          <label htmlFor="repo-name">展示名称（留空使用 GitHub 名称）</label>
+          <input
+            id="repo-name"
+            value={editing.display_name}
+            maxLength={100}
+            onChange={(event) =>
+              setEditing({ ...editing, display_name: event.target.value })
+            }
+          />
+          <label htmlFor="repo-desc">展示简介（留空使用 GitHub 简介）</label>
+          <textarea
+            id="repo-desc"
+            value={editing.override_description}
+            maxLength={500}
+            rows={3}
+            onChange={(event) =>
+              setEditing({
+                ...editing,
+                override_description: event.target.value,
+              })
+            }
+          />
+          <label htmlFor="repo-position">排序（数字越小越靠前）</label>
+          <input
+            id="repo-position"
+            type="number"
+            min={0}
+            max={9999}
+            value={editing.position}
+            onChange={(event) =>
+              setEditing({ ...editing, position: event.target.value })
+            }
+          />
+          <div className="admin-editor-actions">
+            <button className="button button-primary" type="submit" disabled={busy}>
+              {busy ? "保存中…" : "保存"} <span>↘</span>
+            </button>
+            <button
+              className="button button-secondary"
+              type="button"
+              onClick={() => setEditing(null)}
+            >
+              取消
+            </button>
+          </div>
+        </form>
+      ) : null}
+
+      {items.length === 0 ? (
+        <p className="admin-empty">
+          还没有仓库数据，点击「立即同步」从 GitHub 拉取。
+        </p>
+      ) : (
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>仓库</th>
+              <th>展示名称</th>
+              <th>简介</th>
+              <th>★ / 语言</th>
+              <th>排序</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((repo) => (
+              <tr key={repo.id}>
+                <td>
+                  <a href={repo.html_url} target="_blank" rel="noreferrer">
+                    {repo.github_name} ↗
+                  </a>
+                </td>
+                <td>{repo.display_name ?? "—"}</td>
+                <td className="admin-message">
+                  {repo.override_description ?? repo.description ?? "—"}
+                </td>
+                <td>
+                  ★ {repo.stargazers_count}
+                  {repo.language ? ` · ${repo.language}` : ""}
+                </td>
+                <td>{repo.position}</td>
+                <td>
+                  <span
+                    className={`admin-badge ${repo.visible ? "processed" : "pending"}`}
+                  >
+                    {repo.visible ? "展示中" : "已隐藏"}
+                  </span>
+                </td>
+                <td>
+                  <span className="admin-actions">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() =>
+                        setEditing({
+                          id: repo.id,
+                          display_name: repo.display_name ?? "",
+                          override_description: repo.override_description ?? "",
+                          position: String(repo.position),
+                        })
+                      }
+                    >
+                      编辑
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() =>
+                        call(`/api/admin/repos/${repo.id}`, "PATCH", {
+                          visible: !repo.visible,
+                        })
+                      }
+                    >
+                      {repo.visible ? "隐藏" : "展示"}
+                    </button>
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}

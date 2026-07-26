@@ -148,6 +148,113 @@ export async function getVisitStats(): Promise<VisitStats> {
   };
 }
 
+export type RepoRow = {
+  id: number;
+  github_name: string;
+  html_url: string;
+  description: string | null;
+  language: string | null;
+  stargazers_count: number;
+  display_name: string | null;
+  override_description: string | null;
+  visible: number;
+  position: number;
+  fetched_at: string;
+};
+
+/** A repo as the public site renders it (overrides applied). */
+export type PublicRepo = {
+  name: string;
+  description: string | null;
+  html_url: string;
+  stargazers_count: number;
+  language: string | null;
+};
+
+export async function getVisibleRepos(): Promise<PublicRepo[]> {
+  const rows = await queryOr<RepoRow, RepoRow[]>(
+    [],
+    "SELECT id, github_name, html_url, description, language, stargazers_count, display_name, override_description, visible, position, fetched_at FROM repos WHERE visible = 1 ORDER BY position ASC, stargazers_count DESC, github_name ASC LIMIT 9",
+  );
+  return rows.map((row) => ({
+    name: row.display_name?.trim() || row.github_name,
+    description: row.override_description?.trim() || row.description,
+    html_url: row.html_url,
+    stargazers_count: row.stargazers_count,
+    language: row.language,
+  }));
+}
+
+export async function listRepos(): Promise<RepoRow[]> {
+  return query<RepoRow>(
+    "SELECT id, github_name, html_url, description, language, stargazers_count, display_name, override_description, visible, position, fetched_at FROM repos ORDER BY position ASC, stargazers_count DESC, github_name ASC",
+  );
+}
+
+export async function upsertFetchedRepo(repo: {
+  name: string;
+  html_url: string;
+  description: string | null;
+  language: string | null;
+  stargazers_count: number;
+}): Promise<void> {
+  await query(
+    `INSERT INTO repos (github_name, html_url, description, language, stargazers_count, fetched_at)
+     VALUES (?, ?, ?, ?, ?, NOW())
+     ON DUPLICATE KEY UPDATE
+       html_url = VALUES(html_url),
+       description = VALUES(description),
+       language = VALUES(language),
+       stargazers_count = VALUES(stargazers_count),
+       fetched_at = NOW()`,
+    [repo.name, repo.html_url, repo.description, repo.language, repo.stargazers_count],
+  );
+}
+
+export async function deleteReposNotIn(names: string[]): Promise<void> {
+  if (names.length === 0) {
+    await query("DELETE FROM repos");
+    return;
+  }
+  const placeholders = names.map(() => "?").join(", ");
+  await query(
+    `DELETE FROM repos WHERE github_name NOT IN (${placeholders})`,
+    names,
+  );
+}
+
+export async function updateRepoOverrides(
+  id: number,
+  fields: {
+    display_name?: string | null;
+    override_description?: string | null;
+    visible?: boolean;
+    position?: number;
+  },
+): Promise<void> {
+  const sets: string[] = [];
+  const params: unknown[] = [];
+  if (fields.display_name !== undefined) {
+    sets.push("display_name = ?");
+    params.push(fields.display_name);
+  }
+  if (fields.override_description !== undefined) {
+    sets.push("override_description = ?");
+    params.push(fields.override_description);
+  }
+  if (fields.visible !== undefined) {
+    sets.push("visible = ?");
+    params.push(fields.visible ? 1 : 0);
+  }
+  if (fields.position !== undefined) {
+    sets.push("position = ?");
+    params.push(fields.position);
+  }
+  if (sets.length === 0) return;
+  params.push(id);
+  await query(`UPDATE repos SET ${sets.join(", ")} WHERE id = ?`, params);
+}
+
 export type AdminUser = {
   id: number;
   username: string;

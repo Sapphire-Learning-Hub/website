@@ -1,4 +1,4 @@
-import type { Repo } from "@/lib/github";
+import type { PublicRepo } from "@/lib/queries";
 
 const githubUrl = "https://github.com/Sapphire-Learning-Hub";
 
@@ -54,7 +54,7 @@ function ProjectArt({ type }: { type: string }) {
   );
 }
 
-export default function ProjectsSection({ repos }: { repos: Repo[] | null }) {
+export default function ProjectsSection({ repos }: { repos: PublicRepo[] }) {
   return (
     <section className="projects section-shell" id="projects">
       <div className="section-heading">
@@ -66,7 +66,7 @@ export default function ProjectsSection({ repos }: { repos: Repo[] | null }) {
       </div>
 
       <div className="project-grid">
-        {repos
+        {repos.length > 0
           ? repos.map((repo, index) => (
               <a
                 className={`project-card ${tones[index % 3]}`}

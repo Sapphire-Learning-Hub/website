@@ -30,6 +30,20 @@ const SCHEMA_STATEMENTS = [
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS repos (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    github_name VARCHAR(100) NOT NULL UNIQUE,
+    html_url VARCHAR(255) NOT NULL,
+    description TEXT NULL,
+    language VARCHAR(50) NULL,
+    stargazers_count INT UNSIGNED NOT NULL DEFAULT 0,
+    display_name VARCHAR(100) NULL,
+    override_description TEXT NULL,
+    visible TINYINT(1) NOT NULL DEFAULT 1,
+    position INT UNSIGNED NOT NULL DEFAULT 0,
+    fetched_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 ];
 
 export const isDbConfigured = Boolean(process.env.DATABASE_URL);
@@ -41,9 +55,13 @@ export class ServiceUnavailableError extends Error {
   }
 }
 
+// Bump when SCHEMA_STATEMENTS change so long-lived processes re-run them.
+const SCHEMA_VERSION = 2;
+
 type DbGlobal = typeof globalThis & {
   __sapphirePool?: mysql.Pool;
   __sapphireSchemaReady?: Promise<void>;
+  __sapphireSchemaVersion?: number;
   __sapphireWarned?: boolean;
 };
 
@@ -69,6 +87,10 @@ function getPool(): mysql.Pool | null {
 }
 
 async function ensureSchema(pool: mysql.Pool): Promise<void> {
+  if (dbGlobal.__sapphireSchemaVersion !== SCHEMA_VERSION) {
+    dbGlobal.__sapphireSchemaVersion = SCHEMA_VERSION;
+    dbGlobal.__sapphireSchemaReady = undefined;
+  }
   dbGlobal.__sapphireSchemaReady ??= (async () => {
     for (const statement of SCHEMA_STATEMENTS) {
       await pool.query(statement);

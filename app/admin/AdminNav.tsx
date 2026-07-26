@@ -7,6 +7,7 @@ const links = [
   ["/admin", "概览"],
   ["/admin/joins", "申请"],
   ["/admin/announcements", "公告"],
+  ["/admin/repos", "仓库"],
 ] as const;
 
 export default function AdminNav() {

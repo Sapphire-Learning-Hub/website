@@ -163,6 +163,8 @@ footer p { margin: 0; font: 12px var(--font-mono); opacity: .8; } footer > a { f
 .admin-stats b { display: block; font-size: 40px; letter-spacing: -.04em; }
 .admin-stats span { font: 11px var(--font-mono); color: var(--muted); }
 .admin-empty { border: 1px dashed var(--muted); border-radius: 7px; padding: 30px; color: var(--muted); }
+.admin-note { margin: -14px 0 20px; font-size: 13px; color: var(--muted); }
+.admin-notice { margin: 0 0 16px; font-size: 14px; color: #1d7a34; }
 .admin-filter { display: flex; gap: 4px; }
 .admin-filter a { padding: 7px 16px; font-size: 14px; border: 1px solid var(--line); border-radius: 5px; }
 .admin-filter a.active { background: var(--ink); color: #fff; border-color: var(--ink); }

@@ -1,4 +1,4 @@
-export type Repo = {
+export type GithubRepo = {
   name: string;
   description: string | null;
   html_url: string;
@@ -7,9 +7,10 @@ export type Repo = {
 };
 
 const ORG_REPOS_URL =
-  "https://api.github.com/orgs/Sapphire-Learning-Hub/repos?sort=updated&per_page=9&type=public";
+  "https://api.github.com/orgs/Sapphire-Learning-Hub/repos?sort=updated&per_page=50&type=public";
 
-export async function fetchOrgRepos(): Promise<Repo[] | null> {
+/** Fetches the org repo list from the GitHub API. Returns null on any failure. */
+export async function fetchOrgRepos(): Promise<GithubRepo[] | null> {
   const headers: Record<string, string> = {
     Accept: "application/vnd.github+json",
   };
@@ -19,7 +20,7 @@ export async function fetchOrgRepos(): Promise<Repo[] | null> {
   try {
     const response = await fetch(ORG_REPOS_URL, {
       headers,
-      next: { revalidate: 3600 },
+      cache: "no-store",
     });
     if (!response.ok) return null;
     const data: unknown = await response.json();
@@ -38,7 +39,7 @@ export async function fetchOrgRepos(): Promise<Repo[] | null> {
         language: typeof item.language === "string" ? item.language : null,
       }))
       .filter((repo) => repo.name && repo.html_url);
-    return repos.length > 0 ? repos : null;
+    return repos;
   } catch {
     return null;
   }

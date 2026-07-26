@@ -115,8 +115,12 @@ test("keeps the expected backend and admin route layout", () => {
     "../app/api/announcements/route.ts",
     "../app/api/visits/route.ts",
     "../app/api/admin/login/route.ts",
+    "../app/api/admin/repos/route.ts",
+    "../app/api/admin/repos/sync/route.ts",
     "../app/admin/page.tsx",
     "../app/admin/login/page.tsx",
+    "../app/admin/repos/page.tsx",
+    "../instrumentation.ts",
   ];
   for (const route of routes) {
     assert.equal(

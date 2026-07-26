@@ -2,8 +2,11 @@ import AnnouncementsSection from "./components/AnnouncementsSection";
 import JoinForm from "./components/JoinForm";
 import ProjectsSection from "./components/ProjectsSection";
 import VisitCounter from "./components/VisitCounter";
-import { fetchOrgRepos } from "@/lib/github";
-import { getPublishedAnnouncements, getVisitStats } from "@/lib/queries";
+import {
+  getPublishedAnnouncements,
+  getVisibleRepos,
+  getVisitStats,
+} from "@/lib/queries";
 
 export const revalidate = 300;
 
@@ -25,7 +28,7 @@ function BrandMark() {
 
 export default async function Home() {
   const [repos, announcements, visits] = await Promise.all([
-    fetchOrgRepos(),
+    getVisibleRepos().catch(() => []),
     getPublishedAnnouncements().catch(() => []),
     getVisitStats().catch(() => ({ total: null, today: null })),
   ]);
