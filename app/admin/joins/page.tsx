@@ -63,6 +63,7 @@ export default async function AdminJoinsPage({
         {items.length === 0 ? (
           <p className="admin-empty">暂无申请记录。</p>
         ) : (
+          <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
               <tr>
@@ -93,6 +94,7 @@ export default async function AdminJoinsPage({
               ))}
             </tbody>
           </table>
+          </div>
         )}
 
         {totalPages > 1 ? (

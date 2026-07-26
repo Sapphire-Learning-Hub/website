@@ -236,6 +236,7 @@ export default function RepoManager({
       ) : null}
 
       {liveRepos.length > 0 ? (
+        <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
             <tr>
@@ -305,6 +306,7 @@ export default function RepoManager({
             ))}
           </tbody>
         </table>
+        </div>
       ) : null}
     </div>
   );
