@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ArrowDownRight, Check } from "./icons";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
@@ -38,7 +39,7 @@ export default function JoinForm() {
   if (status === "success") {
     return (
       <div className="join-success" role="status">
-        <b>✓ 已收到你的申请</b>
+        <b><Check /> 已收到你的申请</b>
         <p>我们会尽快通过你留下的联系方式与你联络，欢迎加入。</p>
       </div>
     );
@@ -95,7 +96,7 @@ export default function JoinForm() {
         type="submit"
         disabled={status === "submitting"}
       >
-        {status === "submitting" ? "提交中…" : "提交申请"} <span>↘</span>
+        {status === "submitting" ? "提交中…" : "提交申请"} <ArrowDownRight />
       </button>
     </form>
   );

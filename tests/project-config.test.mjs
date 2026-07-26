@@ -162,6 +162,37 @@ test("README documents the backend environment variables", async () => {
   assert.equal(readmeSource.includes("create-admin"), true);
 });
 
+test("renders icons via svg components instead of unicode glyphs", async () => {
+  const { readdir } = await import("node:fs/promises");
+  const appDirUrl = new URL("../app", import.meta.url);
+  const glyphPattern = /[↗↘←→✓★⑂]/u;
+
+  async function collect(dirUrl) {
+    const entries = await readdir(dirUrl, { withFileTypes: true });
+    const files = [];
+    for (const entry of entries) {
+      const entryUrl = new URL(
+        `${dirUrl.href}/${entry.name}${entry.isDirectory() ? "" : ""}`,
+      );
+      if (entry.isDirectory()) {
+        files.push(...(await collect(entryUrl)));
+      } else if (/\.(tsx|ts|css)$/.test(entry.name)) {
+        files.push(entryUrl);
+      }
+    }
+    return files;
+  }
+
+  for (const fileUrl of await collect(appDirUrl)) {
+    const source = await readFile(fileUrl, "utf8");
+    assert.equal(
+      glyphPattern.test(source),
+      false,
+      `${fileUrl.pathname} should use svg icon components instead of unicode arrow/symbol glyphs`,
+    );
+  }
+});
+
 test("keeps an env example file in sync with documented variables", async () => {
   const envExample = await readUtf8(new URL("../.env.example", import.meta.url));
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowDownRight } from "@/app/components/icons";
 import type { Announcement } from "@/lib/queries";
 
 type Editing = { id: number | null; title: string; body: string };
@@ -60,7 +61,7 @@ export default function AnnouncementManager({
           className="button button-primary admin-new"
           onClick={() => setEditing({ id: null, title: "", body: "" })}
         >
-          新建公告 <span>↘</span>
+          新建公告 <ArrowDownRight />
         </button>
       </div>
 
@@ -94,7 +95,7 @@ export default function AnnouncementManager({
               type="submit"
               disabled={busy}
             >
-              {busy ? "保存中…" : "保存"} <span>↘</span>
+              {busy ? "保存中…" : "保存"} <ArrowDownRight />
             </button>
             <button
               className="button button-secondary"

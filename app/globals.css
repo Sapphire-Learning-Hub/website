@@ -14,6 +14,7 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
+.icon { display: inline-block; vertical-align: -0.125em; flex: 0 0 auto; }
 body {
   margin: 0;
   background: var(--paper);
@@ -91,10 +92,11 @@ a { color: inherit; text-decoration: none; }
 .project-card:hover { transform: translateY(-8px); box-shadow: 0 12px 0 rgba(17,19,24,.12); }
 .project-card.dark { background: var(--ink); color: #fff; }.project-card.paper { background: #f9f6ee; }.project-card.blue { background: var(--blue); color: #fff; border-color: var(--blue-deep); }
 .card-meta { display: flex; justify-content: space-between; padding-bottom: 16px; border-bottom: 1px solid currentColor; color: var(--blue); font: 11px var(--font-mono); }
+.card-stars { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .dark .card-meta, .blue .card-meta { color: #fff; }
 .project-card h3 { margin: 28px 0 12px; font-size: clamp(25px, 2.2vw, 36px); letter-spacing: -.04em; }
 .project-card > p { max-width: 400px; margin: 0; line-height: 1.65; opacity: .72; }
-.card-link { position: absolute; left: 28px; bottom: 24px; font-size: 13px; font-weight: 700; }
+.card-link { position: absolute; left: 28px; bottom: 24px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
 .terminal-art { position: absolute; right: -20px; bottom: 30px; width: 54%; height: 160px; border: 1px solid var(--blue); padding: 22px; transform: rotate(-4deg); color: var(--acid); }
 .terminal-art i { font: 20px var(--font-mono); }.terminal-art span { display: block; height: 3px; margin: 16px 0; background: var(--blue); width: 80%; }.terminal-art span:nth-of-type(2) { width: 55%; }.terminal-art span:nth-of-type(3) { width: 70%; }
 .flow-art, .branch-art { position: absolute; width: 210px; height: 150px; right: -6px; bottom: 30px; }

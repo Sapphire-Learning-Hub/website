@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowDownRight } from "@/app/components/icons";
 
 export default function SetupForm() {
   const router = useRouter();
@@ -83,7 +84,7 @@ export default function SetupForm() {
       />
       {error ? <p className="form-error">{error}</p> : null}
       <button className="button button-primary" type="submit" disabled={busy}>
-        {busy ? "创建中…" : "创建并进入后台"} <span>↘</span>
+        {busy ? "创建中…" : "创建并进入后台"} <ArrowDownRight />
       </button>
     </form>
   );

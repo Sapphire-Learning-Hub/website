@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { ArrowUpRight } from "@/app/components/icons";
 
 const links = [
   ["/admin", "概览"],
@@ -40,7 +41,7 @@ export default function AdminNav() {
         ))}
       </nav>
       <button type="button" className="admin-logout" onClick={logout}>
-        退出 ↗
+        退出 <ArrowUpRight />
       </button>
     </header>
   );

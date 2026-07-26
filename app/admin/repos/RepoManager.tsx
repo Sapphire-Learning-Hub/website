@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowDownRight, ArrowUpRight, Star } from "@/app/components/icons";
 import type { RepoRow } from "@/lib/queries";
 
 type Editing = {
@@ -103,7 +104,7 @@ export default function RepoManager({
           disabled={busy}
           onClick={refresh}
         >
-          {busy ? "同步中…" : "立即同步"} <span>↘</span>
+          {busy ? "同步中…" : "立即同步"} <ArrowDownRight />
         </button>
       </div>
 
@@ -215,7 +216,7 @@ export default function RepoManager({
           />
           <div className="admin-editor-actions">
             <button className="button button-primary" type="submit" disabled={busy}>
-              {busy ? "保存中…" : "保存"} <span>↘</span>
+              {busy ? "保存中…" : "保存"} <ArrowDownRight />
             </button>
             <button
               className="button button-secondary"
@@ -241,7 +242,7 @@ export default function RepoManager({
               <th>仓库</th>
               <th>展示名称</th>
               <th>简介</th>
-              <th>★ / 语言</th>
+              <th><Star /> / 语言</th>
               <th>排序</th>
               <th>状态</th>
               <th>操作</th>
@@ -252,7 +253,7 @@ export default function RepoManager({
               <tr key={repo.id}>
                 <td>
                   <a href={repo.html_url} target="_blank" rel="noreferrer">
-                    {repo.github_name} ↗
+                    {repo.github_name} <ArrowUpRight />
                   </a>
                 </td>
                 <td>{repo.display_name ?? "—"}</td>
@@ -260,7 +261,7 @@ export default function RepoManager({
                   {repo.override_description ?? repo.description ?? "—"}
                 </td>
                 <td>
-                  ★ {repo.stargazers_count}
+                  <Star /> {repo.stargazers_count}
                   {repo.language ? ` · ${repo.language}` : ""}
                 </td>
                 <td>{repo.position}</td>

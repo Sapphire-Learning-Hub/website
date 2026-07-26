@@ -1,4 +1,5 @@
 import type { PublicRepo } from "@/lib/queries";
+import { ArrowUpRight, Star } from "./icons";
 
 const githubUrl = "https://github.com/Sapphire-Learning-Hub";
 
@@ -77,12 +78,12 @@ export default function ProjectsSection({ repos }: { repos: PublicRepo[] }) {
               >
                 <div className="card-meta">
                   <span>{repo.language ?? "PROJECT"}</span>
-                  <span>★ {repo.stargazers_count}</span>
+                  <span className="card-stars"><Star /> {repo.stargazers_count}</span>
                 </div>
                 <h3>{repo.name}</h3>
                 <p>{repo.description ?? "这个项目还没有描述，点开看看它在做什么。"}</p>
                 <ProjectArt type={arts[index % 3]} />
-                <span className="card-link">查看仓库 ↗</span>
+                <span className="card-link">查看仓库 <ArrowUpRight /></span>
               </a>
             ))
           : fallbackProjects.map((project) => (
@@ -97,7 +98,7 @@ export default function ProjectsSection({ repos }: { repos: PublicRepo[] }) {
                 <h3>{project.title}</h3>
                 <p>{project.description}</p>
                 <ProjectArt type={project.art} />
-                <span className="card-link">查看组织项目 ↗</span>
+                <span className="card-link">查看组织项目 <ArrowUpRight /></span>
               </a>
             ))}
       </div>

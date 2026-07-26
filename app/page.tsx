@@ -3,6 +3,12 @@ import JoinForm from "./components/JoinForm";
 import ProjectsSection from "./components/ProjectsSection";
 import VisitCounter from "./components/VisitCounter";
 import {
+  ArrowDownRight,
+  ArrowUpRight,
+  Check,
+  GitFork,
+} from "./components/icons";
+import {
   getPublishedAnnouncements,
   getVisibleRepos,
   getVisitStats,
@@ -65,8 +71,8 @@ export default async function Home() {
             在真实项目中学习协作、工程化与开源。
           </p>
           <div className="hero-actions">
-            <a className="button button-primary" href="#projects">探索项目 <span>↘</span></a>
-            <a className="button button-secondary" href="#join">加入我们 <span>↗</span></a>
+            <a className="button button-primary" href="#projects">探索项目 <ArrowDownRight /></a>
+            <a className="button button-secondary" href="#join">加入我们 <ArrowUpRight /></a>
           </div>
         </div>
 
@@ -82,8 +88,8 @@ export default async function Home() {
           <div className="orbit orbit-one"><i /></div>
           <div className="orbit orbit-two"><i /></div>
           <div className="diagram-node node-code">{`{ }`}</div>
-          <div className="diagram-node node-git">⑂</div>
-          <div className="diagram-node node-done">✓</div>
+          <div className="diagram-node node-git"><GitFork size="26" /></div>
+          <div className="diagram-node node-done"><Check size="24" /></div>
           <span className="visual-note">CODE IS<br />OUR COMMON<br />LANGUAGE</span>
         </div>
       </section>
@@ -101,7 +107,7 @@ export default async function Home() {
             <li key={index}>
               <span className="step-index">{index}</span>
               <div><h3>{title}</h3><p>{description}</p></div>
-              <span className="step-arrow" aria-hidden="true">↘</span>
+              <span className="step-arrow" aria-hidden="true"><ArrowDownRight /></span>
             </li>
           ))}
         </ol>
@@ -115,7 +121,7 @@ export default async function Home() {
           <p className="kicker"><span /> SAPPHIRE LEARNING HUB</p>
           <h2>为学习者提供一块<br />可以共同打磨作品的地方。</h2>
           <p>我们根据成员当前的学习进度，设计和维护不同规模的实践项目。部分项目独立完成，部分项目多人协作；每个人都可以从合适的任务开始，逐步参与更复杂的工作。</p>
-          <a className="text-link" href={githubUrl} target="_blank" rel="noreferrer">访问 GitHub 组织 <span>↗</span></a>
+          <a className="text-link" href={githubUrl} target="_blank" rel="noreferrer">访问 GitHub 组织 <ArrowUpRight /></a>
         </div>
         <div className="principles" aria-label="社区原则">
           <div><b>OPEN</b><span>开放交流</span></div>
@@ -141,7 +147,7 @@ export default async function Home() {
           Make practice visible. Make progress real.
           <VisitCounter initialTotal={visits.total} />
         </p>
-        <a href={githubUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
+        <a href={githubUrl} target="_blank" rel="noreferrer">GitHub <ArrowUpRight /></a>
       </footer>
     </main>
   );

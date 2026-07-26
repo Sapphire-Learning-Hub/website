@@ -1,3 +1,4 @@
+import { ArrowLeft, ArrowRight } from "@/app/components/icons";
 import { isDbConfigured } from "@/lib/db";
 import { listJoinRequests, type JoinRequest } from "@/lib/queries";
 import AdminNav from "../AdminNav";
@@ -97,13 +98,13 @@ export default async function AdminJoinsPage({
         {totalPages > 1 ? (
           <nav className="admin-pager" aria-label="分页">
             {page > 1 ? (
-              <a href={`/admin/joins?page=${page - 1}${filterQuery}`}>← 上一页</a>
+              <a href={`/admin/joins?page=${page - 1}${filterQuery}`}><ArrowLeft /> 上一页</a>
             ) : null}
             <span>
               {page} / {totalPages}
             </span>
             {page < totalPages ? (
-              <a href={`/admin/joins?page=${page + 1}${filterQuery}`}>下一页 →</a>
+              <a href={`/admin/joins?page=${page + 1}${filterQuery}`}>下一页 <ArrowRight /></a>
             ) : null}
           </nav>
         ) : null}
