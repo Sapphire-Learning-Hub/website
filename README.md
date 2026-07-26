@@ -37,7 +37,7 @@ bun run build
 | `DATABASE_URL` | 动态功能需要 | MySQL 连接串，如 `mysql://sapphire_app:密码@localhost:3306/sapphire_hub`。首次连接自动建表。 |
 | `SESSION_SECRET` | 管理后台需要 | 会话签名密钥，用 `openssl rand -hex 32` 生成。未设置时后台与管理 API 均返回 404。 |
 | `GITHUB_TOKEN` | 可选 | 提升 GitHub API 限额。未设置时使用匿名额度（60 次/时，配合定时同步已足够）。 |
-| `REPO_SYNC_INTERVAL_MINUTES` | 可选 | 仓库列表自动同步间隔（分钟，最小 5，默认 60）。 |
+| `REPO_SYNC_INTERVAL_MINUTES` | 可选 | 社区数据（仓库/贡献者/GitHub 动态）自动同步间隔（分钟，最小 5，默认 60）。 |
 
 ## MySQL Setup
 
@@ -68,6 +68,7 @@ bun run create-admin <username>
 - 查看、筛选、处理、删除加入申请
 - 新建、编辑、发布/下线、删除社区公告
 - 管理 GitHub 仓库列表：服务启动后按 `REPO_SYNC_INTERVAL_MINUTES` 自动同步，可手动「立即同步」；支持覆盖展示名称/简介、控制是否展示与排序（覆盖在同步后保留）。同步不会删除记录：无法对应到 GitHub 的仓库会标记为失联并在后台提示，可选择移除记录，或将其覆盖信息绑定到改名后的新仓库
+- 管理社区数据：同步时一并聚合各非 fork 仓库的贡献者（首页头像墙与统计）与组织最近的 GitHub 动态（首页时间线）；可在「社区」页隐藏个别贡献者（如 bot）
 
 ## Project Structure
 

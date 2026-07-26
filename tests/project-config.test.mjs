@@ -117,9 +117,11 @@ test("keeps the expected backend and admin route layout", () => {
     "../app/api/admin/login/route.ts",
     "../app/api/admin/repos/route.ts",
     "../app/api/admin/repos/sync/route.ts",
+    "../app/api/admin/contributors/[id]/route.ts",
     "../app/admin/page.tsx",
     "../app/admin/login/page.tsx",
     "../app/admin/repos/page.tsx",
+    "../app/admin/community/page.tsx",
     "../instrumentation.ts",
   ];
   for (const route of routes) {
