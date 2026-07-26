@@ -8,3 +8,4 @@ Applies to the whole repository.
 - Keep this repository a standard Next.js App Router site. Route code belongs in `app/`, and static assets belong in `public/`.
 - Do not reintroduce Vite, vinext, Worker, or OpenAI Sites-specific build layers unless the user explicitly asks for them.
 - Prefer small, focused changes. Add dependencies or infrastructure only when the current site actually needs them.
+- Database access goes through `lib/db.ts` and `lib/queries.ts` only. Do not create MySQL connections or embed SQL elsewhere.
