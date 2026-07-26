@@ -160,11 +160,12 @@ export type RepoRow = {
   visible: number;
   position: number;
   missing: number;
+  is_fork: number;
   fetched_at: string;
 };
 
 const REPO_COLUMNS =
-  "id, github_name, html_url, description, language, stargazers_count, display_name, override_description, visible, position, missing, fetched_at";
+  "id, github_name, html_url, description, language, stargazers_count, display_name, override_description, visible, position, missing, is_fork, fetched_at";
 
 /** A repo as the public site renders it (overrides applied). */
 export type PublicRepo = {
@@ -201,18 +202,27 @@ export async function upsertFetchedRepo(repo: {
   description: string | null;
   language: string | null;
   stargazers_count: number;
+  fork: boolean;
 }): Promise<void> {
   await query(
-    `INSERT INTO repos (github_name, html_url, description, language, stargazers_count, fetched_at)
-     VALUES (?, ?, ?, ?, ?, NOW())
+    `INSERT INTO repos (github_name, html_url, description, language, stargazers_count, is_fork, fetched_at)
+     VALUES (?, ?, ?, ?, ?, ?, NOW())
      ON DUPLICATE KEY UPDATE
        html_url = VALUES(html_url),
        description = VALUES(description),
        language = VALUES(language),
        stargazers_count = VALUES(stargazers_count),
+       is_fork = VALUES(is_fork),
        missing = 0,
        fetched_at = NOW()`,
-    [repo.name, repo.html_url, repo.description, repo.language, repo.stargazers_count],
+    [
+      repo.name,
+      repo.html_url,
+      repo.description,
+      repo.language,
+      repo.stargazers_count,
+      repo.fork ? 1 : 0,
+    ],
   );
 }
 
@@ -303,6 +313,171 @@ export async function updateRepoOverrides(
   if (sets.length === 0) return;
   params.push(id);
   await query(`UPDATE repos SET ${sets.join(", ")} WHERE id = ?`, params);
+}
+
+export type ContributorRow = {
+  id: number;
+  login: string;
+  avatar_url: string;
+  html_url: string;
+  contributions: number;
+  hidden: number;
+  fetched_at: string;
+};
+
+export type EventRow = {
+  id: number;
+  github_id: string;
+  type: string;
+  actor_login: string;
+  actor_avatar: string;
+  repo_name: string;
+  detail: string | null;
+  occurred_at: string;
+};
+
+export type CommunityStats = {
+  contributors: number;
+  contributions: number;
+  repos: number;
+  stars: number;
+};
+
+export async function upsertContributor(contributor: {
+  login: string;
+  avatar_url: string;
+  html_url: string;
+  contributions: number;
+}): Promise<void> {
+  await query(
+    `INSERT INTO contributors (login, avatar_url, html_url, contributions, fetched_at)
+     VALUES (?, ?, ?, ?, NOW())
+     ON DUPLICATE KEY UPDATE
+       avatar_url = VALUES(avatar_url),
+       html_url = VALUES(html_url),
+       contributions = VALUES(contributions),
+       fetched_at = NOW()`,
+    [
+      contributor.login,
+      contributor.avatar_url,
+      contributor.html_url,
+      contributor.contributions,
+    ],
+  );
+}
+
+export async function deleteContributorsNotIn(logins: string[]): Promise<void> {
+  if (logins.length === 0) {
+    await query("DELETE FROM contributors");
+    return;
+  }
+  const placeholders = logins.map(() => "?").join(", ");
+  await query(
+    `DELETE FROM contributors WHERE login NOT IN (${placeholders})`,
+    logins,
+  );
+}
+
+export async function listContributors(): Promise<ContributorRow[]> {
+  return query<ContributorRow>(
+    "SELECT id, login, avatar_url, html_url, contributions, hidden, fetched_at FROM contributors ORDER BY contributions DESC, login ASC",
+  );
+}
+
+export async function getVisibleContributors(): Promise<ContributorRow[]> {
+  const rows = await queryOr<ContributorRow, ContributorRow[]>(
+    [],
+    "SELECT id, login, avatar_url, html_url, contributions, hidden, fetched_at FROM contributors WHERE hidden = 0 ORDER BY contributions DESC, login ASC LIMIT 40",
+  );
+  return rows;
+}
+
+export async function setContributorHidden(
+  id: number,
+  hidden: boolean,
+): Promise<void> {
+  await query("UPDATE contributors SET hidden = ? WHERE id = ?", [
+    hidden ? 1 : 0,
+    id,
+  ]);
+}
+
+export async function insertEvents(
+  events: {
+    github_id: string;
+    type: string;
+    actor_login: string;
+    actor_avatar: string;
+    repo_name: string;
+    detail: string | null;
+    occurred_at: string;
+  }[],
+): Promise<void> {
+  for (const event of events) {
+    await query(
+      `INSERT IGNORE INTO gh_events (github_id, type, actor_login, actor_avatar, repo_name, detail, occurred_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        event.github_id,
+        event.type,
+        event.actor_login,
+        event.actor_avatar,
+        event.repo_name,
+        event.detail,
+        event.occurred_at,
+      ],
+    );
+  }
+}
+
+export async function pruneEventsKeep(keep: number): Promise<void> {
+  const rows = await query<{ id: number }>(
+    "SELECT id FROM gh_events ORDER BY occurred_at DESC, id DESC LIMIT 1 OFFSET ?",
+    [keep - 1],
+  );
+  const cutoff = rows[0]?.id;
+  if (cutoff === undefined) return;
+  await query(
+    "DELETE FROM gh_events WHERE occurred_at < (SELECT occurred_at FROM (SELECT occurred_at FROM gh_events WHERE id = ?) AS t)",
+    [cutoff],
+  );
+}
+
+export async function getRecentEvents(limit: number): Promise<EventRow[]> {
+  const rows = await queryOr<EventRow, EventRow[]>(
+    [],
+    "SELECT id, github_id, type, actor_login, actor_avatar, repo_name, detail, occurred_at FROM gh_events ORDER BY occurred_at DESC, id DESC LIMIT ?",
+    [limit],
+  );
+  return rows;
+}
+
+export async function getCommunityStats(): Promise<CommunityStats | null> {
+  const rows = await queryOr<
+    {
+      contributors: number | null;
+      contributions: number | null;
+      repos: number | null;
+      stars: number | null;
+    },
+    null
+  >(
+    null,
+    `SELECT
+       (SELECT COUNT(*) FROM contributors WHERE hidden = 0) AS contributors,
+       (SELECT SUM(contributions) FROM contributors WHERE hidden = 0) AS contributions,
+       (SELECT COUNT(*) FROM repos WHERE missing = 0 AND is_fork = 0) AS repos,
+       (SELECT SUM(stargazers_count) FROM repos WHERE missing = 0) AS stars`,
+  );
+  if (rows === null) return null;
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    contributors: Number(row.contributors ?? 0),
+    contributions: Number(row.contributions ?? 0),
+    repos: Number(row.repos ?? 0),
+    stars: Number(row.stars ?? 0),
+  };
 }
 
 export type AdminUser = {

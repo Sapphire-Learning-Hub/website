@@ -1,10 +1,31 @@
 import { isDbConfigured } from "./db";
-import { fetchOrgRepos } from "./github";
-import { markReposMissingNotIn, upsertFetchedRepo } from "./queries";
+import {
+  fetchOrgEvents,
+  fetchOrgRepos,
+  fetchRepoContributors,
+  type GithubContributor,
+} from "./github";
+import {
+  deleteContributorsNotIn,
+  insertEvents,
+  markReposMissingNotIn,
+  pruneEventsKeep,
+  upsertContributor,
+  upsertFetchedRepo,
+} from "./queries";
 
 export type SyncResult =
-  | { ok: true; count: number; missing: number; at: string }
+  | {
+      ok: true;
+      count: number;
+      missing: number;
+      contributors: number | null;
+      events: number | null;
+      at: string;
+    }
   | { ok: false; error: string };
+
+const EVENTS_KEPT = 50;
 
 type SyncGlobal = typeof globalThis & {
   __sapphireRepoSync?: {
@@ -34,7 +55,61 @@ async function doSync(): Promise<SyncResult> {
   // Rows absent from GitHub are flagged, never deleted — the admin decides
   // whether to remove them or re-bind their overrides to a renamed repo.
   const missing = await markReposMissingNotIn(repos.map((repo) => repo.name));
-  return { ok: true, count: repos.length, missing, at: new Date().toISOString() };
+
+  // Contributors: aggregate across the org's own (non-fork) repos so upstream
+  // contributor lists of forked projects don't flood the wall.
+  let contributorCount: number | null = null;
+  try {
+    const byLogin = new Map<string, GithubContributor>();
+    let anyFailed = false;
+    for (const repo of repos.filter((r) => !r.fork)) {
+      const contributors = await fetchRepoContributors(repo.name);
+      if (contributors === null) {
+        anyFailed = true;
+        continue;
+      }
+      for (const contributor of contributors) {
+        const existing = byLogin.get(contributor.login);
+        if (existing) {
+          existing.contributions += contributor.contributions;
+        } else {
+          byLogin.set(contributor.login, { ...contributor });
+        }
+      }
+    }
+    for (const contributor of byLogin.values()) {
+      await upsertContributor(contributor);
+    }
+    // Only prune when every repo answered — a partial sweep would wrongly
+    // drop contributors whose repo request failed.
+    if (!anyFailed) {
+      await deleteContributorsNotIn([...byLogin.keys()]);
+    }
+    contributorCount = byLogin.size;
+  } catch (error) {
+    console.error("[repo-sync] contributors", error);
+  }
+
+  let eventCount: number | null = null;
+  try {
+    const events = await fetchOrgEvents();
+    if (events !== null) {
+      await insertEvents(events);
+      await pruneEventsKeep(EVENTS_KEPT);
+      eventCount = events.length;
+    }
+  } catch (error) {
+    console.error("[repo-sync] events", error);
+  }
+
+  return {
+    ok: true,
+    count: repos.length,
+    missing,
+    contributors: contributorCount,
+    events: eventCount,
+    at: new Date().toISOString(),
+  };
 }
 
 /** Runs a sync, deduplicating concurrent callers onto one in-flight run. */

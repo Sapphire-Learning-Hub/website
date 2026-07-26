@@ -30,6 +30,26 @@ const SCHEMA_STATEMENTS = [
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS contributors (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    login VARCHAR(100) NOT NULL UNIQUE,
+    avatar_url VARCHAR(255) NOT NULL,
+    html_url VARCHAR(255) NOT NULL,
+    contributions INT UNSIGNED NOT NULL DEFAULT 0,
+    hidden TINYINT(1) NOT NULL DEFAULT 0,
+    fetched_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS gh_events (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    github_id VARCHAR(30) NOT NULL UNIQUE,
+    type VARCHAR(40) NOT NULL,
+    actor_login VARCHAR(100) NOT NULL,
+    actor_avatar VARCHAR(255) NOT NULL,
+    repo_name VARCHAR(150) NOT NULL,
+    detail VARCHAR(255) NULL,
+    occurred_at DATETIME NOT NULL,
+    INDEX idx_occurred (occurred_at)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
   `CREATE TABLE IF NOT EXISTS repos (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     github_name VARCHAR(100) NOT NULL UNIQUE,
@@ -51,6 +71,7 @@ const SCHEMA_STATEMENTS = [
 // Errno 1060 (duplicate column) means the patch already applied.
 const MIGRATION_STATEMENTS = [
   `ALTER TABLE repos ADD COLUMN missing TINYINT(1) NOT NULL DEFAULT 0`,
+  `ALTER TABLE repos ADD COLUMN is_fork TINYINT(1) NOT NULL DEFAULT 0`,
 ];
 
 export const isDbConfigured = Boolean(process.env.DATABASE_URL);
@@ -63,7 +84,7 @@ export class ServiceUnavailableError extends Error {
 }
 
 // Bump when SCHEMA_STATEMENTS change so long-lived processes re-run them.
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 type DbGlobal = typeof globalThis & {
   __sapphirePool?: mysql.Pool;

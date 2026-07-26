@@ -19,6 +19,8 @@ export async function POST() {
     ok: true,
     count: result.count,
     missing: result.missing,
+    contributors: result.contributors,
+    events: result.events,
     at: result.at,
   });
 }
