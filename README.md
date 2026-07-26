@@ -30,13 +30,12 @@ bun run build
 
 ## Environment Variables
 
-配置写入 `.env.local`（已被 gitignore 忽略）。所有变量都可缺省：缺少数据库时前台自动降级（表单提示暂未开放、公告与访问计数隐藏），`dev` / `build` 不受影响。
+复制 `.env.example` 为 `.env.local` 并填写。所有变量都可缺省：缺少数据库时前台自动降级（表单提示暂未开放、公告与访问计数隐藏），`dev` / `build` 不受影响。
 
 | 变量 | 必需性 | 说明 |
 | --- | --- | --- |
 | `DATABASE_URL` | 动态功能需要 | MySQL 连接串，如 `mysql://sapphire_app:密码@localhost:3306/sapphire_hub`。首次连接自动建表。 |
-| `ADMIN_PASSWORD` | 管理后台需要 | `/admin` 登录密码。未设置时后台与管理 API 均返回 404。 |
-| `SESSION_SECRET` | 可选 | 会话签名密钥，未设置时从 `ADMIN_PASSWORD` 派生。 |
+| `SESSION_SECRET` | 管理后台需要 | 会话签名密钥，用 `openssl rand -hex 32` 生成。未设置时后台与管理 API 均返回 404。 |
 | `GITHUB_TOKEN` | 可选 | 提升 GitHub API 限额。未设置时使用匿名额度（60 次/时，配合 1 小时缓存已足够）。 |
 
 ## MySQL Setup
@@ -54,7 +53,13 @@ FLUSH PRIVILEGES;
 
 ## Admin Dashboard
 
-访问 `/admin` 使用 `ADMIN_PASSWORD` 登录，可以：
+管理员账号以 scrypt 哈希形式存储在数据库中，用脚本创建（不传密码则自动生成随机密码并打印）：
+
+```bash
+bun run create-admin <username>
+```
+
+访问 `/admin` 使用用户名和密码登录，可以：
 
 - 查看访问统计概览
 - 查看、筛选、处理、删除加入申请

@@ -12,7 +12,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "node --test tests/project-config.test.mjs"
+    "test": "node --test tests/project-config.test.mjs",
+    "create-admin": "bun scripts/create-admin.ts"
   },
   "dependencies": {
     "mysql2": "3.15.3",

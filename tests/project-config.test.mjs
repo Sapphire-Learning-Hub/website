@@ -31,6 +31,7 @@ test("uses standard Next.js scripts for local development and deployment", async
     start: "next start",
     lint: "eslint .",
     test: "node --test tests/project-config.test.mjs",
+    "create-admin": "bun scripts/create-admin.ts",
   });
 });
 
@@ -153,5 +154,14 @@ test("README documents the backend environment variables", async () => {
   const readmeSource = await readUtf8(readmeUrl);
 
   assert.equal(readmeSource.includes("DATABASE_URL"), true);
-  assert.equal(readmeSource.includes("ADMIN_PASSWORD"), true);
+  assert.equal(readmeSource.includes("SESSION_SECRET"), true);
+  assert.equal(readmeSource.includes("create-admin"), true);
+});
+
+test("keeps an env example file in sync with documented variables", async () => {
+  const envExample = await readUtf8(new URL("../.env.example", import.meta.url));
+
+  assert.equal(envExample.includes("DATABASE_URL"), true);
+  assert.equal(envExample.includes("SESSION_SECRET"), true);
+  assert.equal(envExample.includes("GITHUB_TOKEN"), true);
 });

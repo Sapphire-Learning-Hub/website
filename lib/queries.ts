@@ -148,6 +148,32 @@ export async function getVisitStats(): Promise<VisitStats> {
   };
 }
 
+export type AdminUser = {
+  id: number;
+  username: string;
+  password_hash: string;
+};
+
+export async function getAdminUser(
+  username: string,
+): Promise<AdminUser | null> {
+  const rows = await query<AdminUser>(
+    "SELECT id, username, password_hash FROM admin_users WHERE username = ?",
+    [username],
+  );
+  return rows[0] ?? null;
+}
+
+export async function upsertAdminUser(
+  username: string,
+  passwordHash: string,
+): Promise<void> {
+  await query(
+    "INSERT INTO admin_users (username, password_hash) VALUES (?, ?) ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash)",
+    [username, passwordHash],
+  );
+}
+
 export async function countPendingJoins(): Promise<number> {
   const rows = await query<{ n: number }>(
     "SELECT COUNT(*) AS n FROM join_requests WHERE status = 'pending'",

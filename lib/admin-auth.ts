@@ -1,22 +1,23 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { isDbConfigured } from "./db";
+import { verifyPassword } from "./password";
+import { getAdminUser } from "./queries";
 
 export const SESSION_COOKIE = "sapphire_admin";
 export const SESSION_MAX_AGE = 7 * 24 * 60 * 60;
 
-export const isAdminEnabled = Boolean(process.env.ADMIN_PASSWORD);
+// The dashboard needs both a database (admin accounts live there) and a
+// signing secret for the session cookie.
+export const isAdminEnabled =
+  isDbConfigured && Boolean(process.env.SESSION_SECRET);
 
 function sessionSecret(): string {
-  if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
-  return createHash("sha256")
-    .update(`sapphire-session:${process.env.ADMIN_PASSWORD ?? ""}`)
-    .digest("hex");
+  return process.env.SESSION_SECRET ?? "";
 }
 
-function sign(expiresAt: number): string {
-  return createHmac("sha256", sessionSecret())
-    .update(String(expiresAt))
-    .digest("hex");
+function sign(payload: string): string {
+  return createHmac("sha256", sessionSecret()).update(payload).digest("hex");
 }
 
 function safeEqual(a: string, b: string): boolean {
@@ -25,23 +26,31 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(hashA, hashB);
 }
 
-export function checkPassword(password: string): boolean {
-  if (!isAdminEnabled) return false;
-  return safeEqual(password, process.env.ADMIN_PASSWORD ?? "");
+export async function checkCredentials(
+  username: string,
+  password: string,
+): Promise<boolean> {
+  if (!isAdminEnabled || !username || !password) return false;
+  const user = await getAdminUser(username);
+  if (!user) return false;
+  return verifyPassword(password, user.password_hash);
 }
 
-export function createSessionValue(): string {
+export function createSessionValue(username: string): string {
   const expiresAt = Date.now() + SESSION_MAX_AGE * 1000;
-  return `${expiresAt}.${sign(expiresAt)}`;
+  const payload = `${expiresAt}.${Buffer.from(username).toString("base64url")}`;
+  return `${payload}.${sign(payload)}`;
 }
 
 export function verifySessionValue(value: string | undefined): boolean {
   if (!isAdminEnabled || !value) return false;
-  const dotIndex = value.indexOf(".");
-  if (dotIndex <= 0) return false;
-  const expiresAt = Number(value.slice(0, dotIndex));
+  const parts = value.split(".");
+  if (parts.length !== 3) return false;
+  const [expiresPart, usernamePart, signature] = parts;
+  const expiresAt = Number(expiresPart);
   if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return false;
-  return safeEqual(value.slice(dotIndex + 1), sign(expiresAt));
+  if (!usernamePart) return false;
+  return safeEqual(signature, sign(`${expiresPart}.${usernamePart}`));
 }
 
 /** Reads the session cookie from the current request context. */

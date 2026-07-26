@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import {
-  checkPassword,
+  checkCredentials,
   createSessionValue,
   isAdminEnabled,
   SESSION_COOKIE,
@@ -42,23 +42,33 @@ export async function POST(request: Request) {
     );
   }
 
+  let username = "";
   let password = "";
   try {
     const body = await request.json();
+    if (typeof body?.username === "string") username = body.username.trim();
     if (typeof body?.password === "string") password = body.password;
   } catch {
-    // fall through to the credential check with an empty password
+    // fall through to the credential check with empty credentials
   }
 
-  if (!checkPassword(password)) {
+  try {
+    if (!(await checkCredentials(username, password))) {
+      return NextResponse.json(
+        { ok: false, error: "用户名或密码不正确。" },
+        { status: 401 },
+      );
+    }
+  } catch (error) {
+    console.error("[api/admin/login]", error);
     return NextResponse.json(
-      { ok: false, error: "密码不正确。" },
-      { status: 401 },
+      { ok: false, error: "登录失败，请稍后再试。" },
+      { status: 500 },
     );
   }
 
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(SESSION_COOKIE, createSessionValue(), {
+  response.cookies.set(SESSION_COOKIE, createSessionValue(username), {
     httpOnly: true,
     sameSite: "lax",
     path: "/",

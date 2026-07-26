@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -17,7 +18,7 @@ export default function AdminLoginPage() {
       const response = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ username, password }),
       });
       if (response.ok) {
         router.push("/admin");
@@ -40,6 +41,14 @@ export default function AdminLoginPage() {
           <span /> ADMIN ACCESS
         </p>
         <h1>管理后台</h1>
+        <label htmlFor="admin-username">USERNAME</label>
+        <input
+          id="admin-username"
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
+          autoComplete="username"
+          required
+        />
         <label htmlFor="admin-password">PASSWORD</label>
         <input
           id="admin-password"
