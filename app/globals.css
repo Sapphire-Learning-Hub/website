@@ -190,6 +190,7 @@ footer p { margin: 0; font: 12px var(--font-mono); opacity: .8; } footer > a { f
 .admin-login { min-height: 100vh; display: grid; place-items: center; padding: 40px 20px; }
 .admin-login-card { width: min(420px, 100%); display: grid; gap: 12px; border: 1px solid var(--ink); border-radius: 7px; padding: 42px 40px; background: rgba(255,255,255,.4); box-shadow: 14px 14px 0 rgba(17,19,24,.12); }
 .admin-login-card h1 { margin: 0 0 14px; font-size: 32px; letter-spacing: -.04em; }
+.setup-hint { margin: -6px 0 10px; font-size: 14px; line-height: 1.7; color: #4f514f; }
 .admin-login-card .button { justify-self: start; margin-top: 8px; }
 .admin-login-card .form-error { grid-column: auto; }
 

@@ -164,6 +164,13 @@ export async function getAdminUser(
   return rows[0] ?? null;
 }
 
+export async function countAdminUsers(): Promise<number> {
+  const rows = await query<{ n: number }>(
+    "SELECT COUNT(*) AS n FROM admin_users",
+  );
+  return rows[0]?.n ?? 0;
+}
+
 export async function upsertAdminUser(
   username: string,
   passwordHash: string,
@@ -172,6 +179,18 @@ export async function upsertAdminUser(
     "INSERT INTO admin_users (username, password_hash) VALUES (?, ?) ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash)",
     [username, passwordHash],
   );
+}
+
+/** Creates the first admin atomically; returns false if one already exists. */
+export async function createFirstAdminUser(
+  username: string,
+  passwordHash: string,
+): Promise<boolean> {
+  const result = (await query(
+    "INSERT INTO admin_users (username, password_hash) SELECT ?, ? WHERE NOT EXISTS (SELECT 1 FROM admin_users)",
+    [username, passwordHash],
+  )) as unknown as { affectedRows?: number };
+  return (result.affectedRows ?? 0) > 0;
 }
 
 export async function countPendingJoins(): Promise<number> {
