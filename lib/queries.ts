@@ -1,4 +1,4 @@
-import { query, queryOr } from "./db";
+import { query, queryOr, withTransaction } from "./db";
 
 export type Announcement = {
   id: number;
@@ -159,8 +159,12 @@ export type RepoRow = {
   override_description: string | null;
   visible: number;
   position: number;
+  missing: number;
   fetched_at: string;
 };
+
+const REPO_COLUMNS =
+  "id, github_name, html_url, description, language, stargazers_count, display_name, override_description, visible, position, missing, fetched_at";
 
 /** A repo as the public site renders it (overrides applied). */
 export type PublicRepo = {
@@ -174,7 +178,7 @@ export type PublicRepo = {
 export async function getVisibleRepos(): Promise<PublicRepo[]> {
   const rows = await queryOr<RepoRow, RepoRow[]>(
     [],
-    "SELECT id, github_name, html_url, description, language, stargazers_count, display_name, override_description, visible, position, fetched_at FROM repos WHERE visible = 1 ORDER BY position ASC, stargazers_count DESC, github_name ASC LIMIT 9",
+    `SELECT ${REPO_COLUMNS} FROM repos WHERE visible = 1 AND missing = 0 ORDER BY position ASC, stargazers_count DESC, github_name ASC LIMIT 9`,
   );
   return rows.map((row) => ({
     name: row.display_name?.trim() || row.github_name,
@@ -187,7 +191,7 @@ export async function getVisibleRepos(): Promise<PublicRepo[]> {
 
 export async function listRepos(): Promise<RepoRow[]> {
   return query<RepoRow>(
-    "SELECT id, github_name, html_url, description, language, stargazers_count, display_name, override_description, visible, position, fetched_at FROM repos ORDER BY position ASC, stargazers_count DESC, github_name ASC",
+    `SELECT ${REPO_COLUMNS} FROM repos ORDER BY missing DESC, position ASC, stargazers_count DESC, github_name ASC`,
   );
 }
 
@@ -206,21 +210,67 @@ export async function upsertFetchedRepo(repo: {
        description = VALUES(description),
        language = VALUES(language),
        stargazers_count = VALUES(stargazers_count),
+       missing = 0,
        fetched_at = NOW()`,
     [repo.name, repo.html_url, repo.description, repo.language, repo.stargazers_count],
   );
 }
 
-export async function deleteReposNotIn(names: string[]): Promise<void> {
+/** Flags rows no longer on GitHub as missing (never deletes). Returns how many are flagged. */
+export async function markReposMissingNotIn(names: string[]): Promise<number> {
   if (names.length === 0) {
-    await query("DELETE FROM repos");
-    return;
+    await query("UPDATE repos SET missing = 1");
+  } else {
+    const placeholders = names.map(() => "?").join(", ");
+    await query(
+      `UPDATE repos SET missing = 1 WHERE github_name NOT IN (${placeholders})`,
+      names,
+    );
   }
-  const placeholders = names.map(() => "?").join(", ");
-  await query(
-    `DELETE FROM repos WHERE github_name NOT IN (${placeholders})`,
-    names,
+  const rows = await query<{ n: number }>(
+    "SELECT COUNT(*) AS n FROM repos WHERE missing = 1",
   );
+  return rows[0]?.n ?? 0;
+}
+
+export async function deleteRepo(id: number): Promise<void> {
+  await query("DELETE FROM repos WHERE id = ?", [id]);
+}
+
+/**
+ * Moves a missing repo's overrides (display name, description, visibility,
+ * position) onto another live row, then removes the missing row. Used when a
+ * repo was renamed on GitHub and the admin re-binds the old record.
+ */
+export async function rebindRepo(
+  missingId: number,
+  targetId: number,
+): Promise<{ error?: string }> {
+  return withTransaction(async (exec) => {
+    const sources = (await exec(
+      `SELECT ${REPO_COLUMNS} FROM repos WHERE id = ? AND missing = 1 FOR UPDATE`,
+      [missingId],
+    )) as RepoRow[];
+    if (sources.length === 0) return { error: "失联记录不存在或已恢复。" };
+    const targets = (await exec(
+      `SELECT ${REPO_COLUMNS} FROM repos WHERE id = ? AND missing = 0 FOR UPDATE`,
+      [targetId],
+    )) as RepoRow[];
+    if (targets.length === 0) return { error: "目标仓库不存在或也已失联。" };
+    const source = sources[0];
+    await exec(
+      "UPDATE repos SET display_name = ?, override_description = ?, visible = ?, position = ? WHERE id = ?",
+      [
+        source.display_name,
+        source.override_description,
+        source.visible,
+        source.position,
+        targetId,
+      ],
+    );
+    await exec("DELETE FROM repos WHERE id = ?", [missingId]);
+    return {};
+  });
 }
 
 export async function updateRepoOverrides(

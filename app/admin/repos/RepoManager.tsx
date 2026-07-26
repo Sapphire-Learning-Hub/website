@@ -20,9 +20,13 @@ export default function RepoManager({
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState<Editing | null>(null);
+  const [rebindTargets, setRebindTargets] = useState<Record<number, string>>({});
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const missingRepos = items.filter((repo) => repo.missing);
+  const liveRepos = items.filter((repo) => !repo.missing);
 
   async function call(path: string, method: string, body?: object) {
     setBusy(true);
@@ -52,8 +56,24 @@ export default function RepoManager({
     setNotice(null);
     const data = await call("/api/admin/repos/sync", "POST");
     if (data?.ok) {
-      setNotice(`已同步 ${data.count} 个仓库。`);
+      setNotice(
+        data.missing > 0
+          ? `已同步 ${data.count} 个仓库，${data.missing} 条记录无法对应到 GitHub 仓库。`
+          : `已同步 ${data.count} 个仓库。`,
+      );
     }
+  }
+
+  async function rebind(missingId: number) {
+    const targetId = Number(rebindTargets[missingId]);
+    if (!targetId) {
+      setError("请先选择要绑定的目标仓库。");
+      return;
+    }
+    const data = await call(`/api/admin/repos/${missingId}/rebind`, "POST", {
+      targetId,
+    });
+    if (data?.ok) setNotice("已将覆盖信息绑定到新仓库。");
   }
 
   async function save(event: React.FormEvent) {
@@ -65,6 +85,12 @@ export default function RepoManager({
       position: Number(editing.position) || 0,
     });
     if (data?.ok) setEditing(null);
+  }
+
+  function repoLabel(repo: RepoRow): string {
+    return repo.display_name
+      ? `${repo.display_name}（${repo.github_name}）`
+      : repo.github_name;
   }
 
   return (
@@ -82,10 +108,75 @@ export default function RepoManager({
       </div>
 
       <p className="admin-note">
-        每 {intervalMinutes} 分钟自动从 GitHub 同步一次；下方的名称/简介覆盖与显示设置在同步后保留。
+        每 {intervalMinutes} 分钟自动从 GitHub 同步一次；名称/简介覆盖与显示设置在同步后保留。
+        同步不会删除记录：无法对应到 GitHub 的仓库会标记为失联，由你决定移除或绑定到改名后的新仓库。
       </p>
       {notice ? <p className="admin-notice">{notice}</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
+
+      {missingRepos.length > 0 ? (
+        <div className="admin-missing">
+          <b>
+            {missingRepos.length} 条记录无法对应到 GitHub 仓库
+            （可能已删除、转移或改名）
+          </b>
+          <ul>
+            {missingRepos.map((repo) => (
+              <li key={repo.id}>
+                <div className="admin-missing-head">
+                  <span className="admin-missing-name">{repoLabel(repo)}</span>
+                  <span className="admin-missing-meta">
+                    最后同步 {repo.fetched_at}
+                    {repo.display_name || repo.override_description
+                      ? " · 含自定义覆盖信息"
+                      : ""}
+                  </span>
+                </div>
+                <div className="admin-missing-actions">
+                  <select
+                    value={rebindTargets[repo.id] ?? ""}
+                    disabled={busy || liveRepos.length === 0}
+                    onChange={(event) =>
+                      setRebindTargets({
+                        ...rebindTargets,
+                        [repo.id]: event.target.value,
+                      })
+                    }
+                  >
+                    <option value="">选择改名后的新仓库…</option>
+                    {liveRepos.map((target) => (
+                      <option key={target.id} value={target.id}>
+                        {target.github_name}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="admin-actions">
+                    <button
+                      type="button"
+                      disabled={busy || liveRepos.length === 0}
+                      onClick={() => rebind(repo.id)}
+                    >
+                      绑定覆盖信息
+                    </button>
+                    <button
+                      type="button"
+                      className="danger"
+                      disabled={busy}
+                      onClick={() => {
+                        if (window.confirm(`确定移除「${repo.github_name}」的记录吗？其覆盖信息将一并删除。`)) {
+                          call(`/api/admin/repos/${repo.id}`, "DELETE");
+                        }
+                      }}
+                    >
+                      移除记录
+                    </button>
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {editing ? (
         <form className="admin-editor" onSubmit={save}>
@@ -137,11 +228,13 @@ export default function RepoManager({
         </form>
       ) : null}
 
-      {items.length === 0 ? (
+      {liveRepos.length === 0 && missingRepos.length === 0 ? (
         <p className="admin-empty">
           还没有仓库数据，点击「立即同步」从 GitHub 拉取。
         </p>
-      ) : (
+      ) : null}
+
+      {liveRepos.length > 0 ? (
         <table className="admin-table">
           <thead>
             <tr>
@@ -155,7 +248,7 @@ export default function RepoManager({
             </tr>
           </thead>
           <tbody>
-            {items.map((repo) => (
+            {liveRepos.map((repo) => (
               <tr key={repo.id}>
                 <td>
                   <a href={repo.html_url} target="_blank" rel="noreferrer">
@@ -211,7 +304,7 @@ export default function RepoManager({
             ))}
           </tbody>
         </table>
-      )}
+      ) : null}
     </div>
   );
 }

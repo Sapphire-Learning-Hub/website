@@ -15,5 +15,10 @@ export async function POST() {
       { status: 502 },
     );
   }
-  return NextResponse.json({ ok: true, count: result.count, at: result.at });
+  return NextResponse.json({
+    ok: true,
+    count: result.count,
+    missing: result.missing,
+    at: result.at,
+  });
 }

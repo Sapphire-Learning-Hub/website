@@ -165,6 +165,15 @@ footer p { margin: 0; font: 12px var(--font-mono); opacity: .8; } footer > a { f
 .admin-empty { border: 1px dashed var(--muted); border-radius: 7px; padding: 30px; color: var(--muted); }
 .admin-note { margin: -14px 0 20px; font-size: 13px; color: var(--muted); }
 .admin-notice { margin: 0 0 16px; font-size: 14px; color: #1d7a34; }
+.admin-missing { border: 1px solid #b26a00; border-radius: 7px; background: rgba(178,106,0,.06); padding: 22px 26px; margin-bottom: 26px; }
+.admin-missing > b { display: block; font-size: 15px; color: #b26a00; margin-bottom: 14px; }
+.admin-missing ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.admin-missing li { border-top: 1px solid rgba(178,106,0,.25); padding-top: 14px; }
+.admin-missing-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
+.admin-missing-name { font-weight: 700; }
+.admin-missing-meta { font: 11px var(--font-mono); color: var(--muted); }
+.admin-missing-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.admin-missing-actions select { border: 1px solid var(--ink); border-radius: 5px; background: rgba(255,255,255,.6); padding: 7px 10px; font: 13px var(--font-sans); color: var(--ink); max-width: 280px; }
 .admin-filter { display: flex; gap: 4px; }
 .admin-filter a { padding: 7px 16px; font-size: 14px; border: 1px solid var(--line); border-radius: 5px; }
 .admin-filter a.active { background: var(--ink); color: #fff; border-color: var(--ink); }

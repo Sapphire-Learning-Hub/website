@@ -41,9 +41,16 @@ const SCHEMA_STATEMENTS = [
     override_description TEXT NULL,
     visible TINYINT(1) NOT NULL DEFAULT 1,
     position INT UNSIGNED NOT NULL DEFAULT 0,
+    missing TINYINT(1) NOT NULL DEFAULT 0,
     fetched_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+];
+
+// Idempotent patches for tables created by older schema versions.
+// Errno 1060 (duplicate column) means the patch already applied.
+const MIGRATION_STATEMENTS = [
+  `ALTER TABLE repos ADD COLUMN missing TINYINT(1) NOT NULL DEFAULT 0`,
 ];
 
 export const isDbConfigured = Boolean(process.env.DATABASE_URL);
@@ -56,7 +63,7 @@ export class ServiceUnavailableError extends Error {
 }
 
 // Bump when SCHEMA_STATEMENTS change so long-lived processes re-run them.
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 type DbGlobal = typeof globalThis & {
   __sapphirePool?: mysql.Pool;
@@ -95,6 +102,14 @@ async function ensureSchema(pool: mysql.Pool): Promise<void> {
     for (const statement of SCHEMA_STATEMENTS) {
       await pool.query(statement);
     }
+    for (const statement of MIGRATION_STATEMENTS) {
+      try {
+        await pool.query(statement);
+      } catch (error) {
+        const errno = (error as { errno?: number }).errno;
+        if (errno !== 1060) throw error;
+      }
+    }
   })();
   try {
     await dbGlobal.__sapphireSchemaReady;
@@ -124,4 +139,28 @@ export async function queryOr<T, F>(
 ): Promise<T[] | F> {
   if (!isDbConfigured) return fallback;
   return query<T>(sql, params);
+}
+
+/** Runs `fn` inside a transaction; rolls back on throw. */
+export async function withTransaction<T>(
+  fn: (exec: (sql: string, params?: unknown[]) => Promise<unknown>) => Promise<T>,
+): Promise<T> {
+  const pool = getPool();
+  if (!pool) throw new ServiceUnavailableError();
+  await ensureSchema(pool);
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const result = await fn(async (sql, params = []) => {
+      const [rows] = await connection.query(sql, params);
+      return rows;
+    });
+    await connection.commit();
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }

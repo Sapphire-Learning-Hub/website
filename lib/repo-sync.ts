@@ -1,9 +1,9 @@
 import { isDbConfigured } from "./db";
 import { fetchOrgRepos } from "./github";
-import { deleteReposNotIn, upsertFetchedRepo } from "./queries";
+import { markReposMissingNotIn, upsertFetchedRepo } from "./queries";
 
 export type SyncResult =
-  | { ok: true; count: number; at: string }
+  | { ok: true; count: number; missing: number; at: string }
   | { ok: false; error: string };
 
 type SyncGlobal = typeof globalThis & {
@@ -31,10 +31,10 @@ async function doSync(): Promise<SyncResult> {
   for (const repo of repos) {
     await upsertFetchedRepo(repo);
   }
-  // Repos deleted/renamed on GitHub disappear here too; overrides live in the
-  // same row so a rename simply starts fresh.
-  await deleteReposNotIn(repos.map((repo) => repo.name));
-  return { ok: true, count: repos.length, at: new Date().toISOString() };
+  // Rows absent from GitHub are flagged, never deleted — the admin decides
+  // whether to remove them or re-bind their overrides to a renamed repo.
+  const missing = await markReposMissingNotIn(repos.map((repo) => repo.name));
+  return { ok: true, count: repos.length, missing, at: new Date().toISOString() };
 }
 
 /** Runs a sync, deduplicating concurrent callers onto one in-flight run. */

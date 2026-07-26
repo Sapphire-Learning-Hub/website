@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/admin-auth";
-import { updateRepoOverrides } from "@/lib/queries";
+import { deleteRepo, updateRepoOverrides } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +84,24 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   try {
     await updateRepoOverrides(id, fields);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("[api/admin/repos/:id]", error);
+    return NextResponse.json({ ok: false }, { status: 500 });
+  }
+}
+
+export async function DELETE(_request: Request, context: RouteContext) {
+  if (!(await verifyAdmin())) {
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
+  const { id: idParam } = await context.params;
+  const id = Number(idParam);
+  if (!Number.isInteger(id) || id <= 0) {
+    return NextResponse.json({ ok: false }, { status: 400 });
+  }
+  try {
+    await deleteRepo(id);
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("[api/admin/repos/:id]", error);
