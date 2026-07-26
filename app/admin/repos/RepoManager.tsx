@@ -57,11 +57,18 @@ export default function RepoManager({
     setNotice(null);
     const data = await call("/api/admin/repos/sync", "POST");
     if (data?.ok) {
-      setNotice(
-        data.missing > 0
-          ? `已同步 ${data.count} 个仓库，${data.missing} 条记录无法对应到 GitHub 仓库。`
-          : `已同步 ${data.count} 个仓库。`,
-      );
+      const parts = [`已同步 ${data.count} 个仓库`];
+      if (typeof data.contributors === "number") {
+        parts.push(`${data.contributors} 位贡献者`);
+      }
+      if (typeof data.events === "number") {
+        parts.push(`${data.events} 条动态`);
+      }
+      let message = `${parts.join("、")}。`;
+      if (data.missing > 0) {
+        message += `${data.missing} 条仓库记录无法对应到 GitHub。`;
+      }
+      setNotice(message);
     }
   }
 
